@@ -495,6 +495,19 @@ class PRWatchState:
         # Launch interactive CLI session with the slash command
         self._launch_terminal(cli, cwd, pr, user_event, slash_command)
 
+    # Tools to auto-approve in launched sessions (beyond global settings.json)
+    ALLOWED_TOOLS = [
+        # File reads
+        "Read", "Glob", "Grep",
+        # Non-destructive git
+        "Bash(git log:*)", "Bash(git diff:*)", "Bash(git show:*)",
+        "Bash(git branch:*)", "Bash(git tag:*)", "Bash(git remote:*)",
+        # Non-destructive gh
+        "Bash(gh pr list:*)", "Bash(gh run list:*)", "Bash(gh api:*)",
+        # Build
+        "Bash(./gradlew:*)",
+    ]
+
     def _launch_terminal(
         self, cli: str, cwd: str, pr: int, user_event: str,
         slash_command: str,
@@ -505,7 +518,8 @@ class PRWatchState:
         wt = str(WT_PATH)
 
         if cli == "claude":
-            cli_part = f'claude --name "{title}" "{slash_command}"'
+            allowed = " ".join(f'--allowedTools "{t}"' for t in self.ALLOWED_TOOLS)
+            cli_part = f'claude --name "{title}" {allowed} "{slash_command}"'
         elif cli == "opencode":
             cli_part = f'opencode --title "{title}" "{slash_command}"'
         else:
